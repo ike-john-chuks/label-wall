@@ -1,10 +1,11 @@
 const key=new URLSearchParams(location.search).get('key')||'',$=i=>document.getElementById(i);let st={notes:[],locked:false,review:false},admin=false;
-const post=o=>fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({key},o))});
-fetch('/api/info?key='+encodeURIComponent(key)).then(r=>r.json()).then(i=>{admin=i.admin;
- const local=['localhost','127.0.0.1'].includes(location.hostname),url=local?'http://'+(i.lan[0]||'localhost')+':'+i.port:location.origin;
+const post=o=>fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({key},o))}).then(r=>{if(!r.ok)throw new Error('Admin request failed: '+r.status);return r});
+fetch('/api/info?key='+encodeURIComponent(key)).then(r=>{if(!r.ok)throw new Error('API info request failed: '+r.status);return r.json()}).then(i=>{admin=i.admin;
+ const local=['localhost','127.0.0.1'].includes(location.hostname),url=local?'http://'+(i.lan[0]||'localhost')+':'+(i.port||3000):location.origin;
  $('join').innerHTML='📱 '+'<b>'+url.replace('http://','').replace('https://','')+'</b>'+' <span style="font-size:14px;opacity:.7">(anonymous)</span>';
  if(admin)tools();draw()});
-new EventSource('/api/stream?key='+encodeURIComponent(key)).onmessage=e=>{st=JSON.parse(e.data);draw()};
+async function refresh(){try{const r=await fetch('/api/state?key='+encodeURIComponent(key));if(!r.ok)throw new Error('Board state request failed: '+r.status);st=await r.json();draw()}catch(e){console.error('Could not refresh board state',e)}}
+refresh();setInterval(refresh,2000);
 function tools(){const t=$('tools');t.innerHTML='';
  const mk=(label,cls,fn)=>{const b=document.createElement('button');b.textContent=label;if(cls)b.className='on';b.onclick=fn;t.appendChild(b)};
  mk(st.locked?'🔒 Locked – open':'🔓 Lock sending',st.locked,()=>post({action:'lock',value:!st.locked}));

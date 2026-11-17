@@ -78,6 +78,8 @@ http
         lan: lanIPs(),
         admin: u.searchParams.get("key") === KEY,
       });
+    if (u.pathname === "/api/state")
+      return json(res, 200, view(u.searchParams.get("key") === KEY));
     if (u.pathname === "/api/stream") {
       const admin = u.searchParams.get("key") === KEY;
       res.writeHead(200, {
